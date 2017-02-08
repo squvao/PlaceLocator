@@ -15,7 +15,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
+/*
+Current activity opens when a 'sign up' button is pressed which is situated in MainActivity
+ */
 public class SignUpActivity extends AppCompatActivity implements View.OnClickListener{
     private TextView textViewLogin;
     private TextView textViewPassword;
@@ -23,6 +25,7 @@ public class SignUpActivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //'super' is a call for a function from a parent class
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_in);
         initComponents();
@@ -34,7 +37,7 @@ public class SignUpActivity extends AppCompatActivity implements View.OnClickLis
         this.buttonSignIn  = (Button) this.findViewById(R.id.content_authorisation_button_sign_in);
         this.buttonSignIn.setOnClickListener(this);
     }
-
+    //initTextView is responsible for linking text view layout with code
     private void initTextView() {
         this.textViewLogin = (TextView) this.findViewById(R.id.content_sign_in_login);
         this.textViewPassword = (TextView) this.findViewById(R.id.content_sign_in_password);
@@ -52,7 +55,7 @@ public class SignUpActivity extends AppCompatActivity implements View.OnClickLis
             public void run() {
                 HttpURLConnection conn = null;
                 try {
-                    Log.i("chat", "+ FoneService --------------- ОТКРОЕМ СОЕДИНЕНИЕ");
+                    Log.i("chat", "+ FoneService --------------- OPEN CONNECTION");
 
                     String login  = textViewLogin.getText().toString();
                     String password  = textViewPassword.getText().toString();
@@ -70,10 +73,10 @@ public class SignUpActivity extends AppCompatActivity implements View.OnClickLis
                     conn.connect();
 
                 } catch (Exception e) {
-                    Log.i("chat", "+ FoneService ошибка: " + e.getMessage());
+                    Log.i("chat", "+ FoneService error: " + e.getMessage());
                 }
 
-                // получаем ответ ---------------------------------->
+                // receiving answer ---------------------------------->
                 try {
                     InputStream is = conn.getInputStream();
                     BufferedReader br = new BufferedReader(
@@ -82,21 +85,22 @@ public class SignUpActivity extends AppCompatActivity implements View.OnClickLis
                     String ans = br.readLine();
                     String anHash = br.readLine();
 
-                    Log.i("chat", "+ FoneService - полный ответ сервера:\n"
+                    Log.i("chat", "+ FoneService - full response from a server:\n"
                             + ans + anHash);
+                    //in this case if a server gave a positive answer we close this activity
                     if(ans.contains("true")) {
                         finish();
                     }
 
 
-                    is.close(); // закроем поток
-                    br.close(); // закроем буфер
+                    is.close(); // close thread
+                    br.close(); // close buffer
 
                 } catch (Exception e) {
-                    Log.i("chat", "+ FoneService ошибка: " + e.getMessage());
+                    Log.i("chat", "+ FoneService error: " + e.getMessage());
                 } finally {
                     conn.disconnect();
-                    Log.i("chat", "+ FoneService --------------- ЗАКРОЕМ СОЕДИНЕНИЕ");
+                    Log.i("chat", "+ FoneService --------------- CLOSE CONNECTION");
                 }
             }
         });

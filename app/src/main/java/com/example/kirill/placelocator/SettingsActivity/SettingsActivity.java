@@ -40,9 +40,12 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void initComponents() {
         initToolbar();
+        //File opening from preferences. File is called 'account' where ACCOUNT_PREFERENCES is a variable.
+        //Receiving preferences from that file.
         this.mSettings = getSharedPreferences(EditAccountSettingsActivity.ACCOUNT_PREFERENCES,
                 Context.MODE_PRIVATE);
         this.initTextView();
+        //Link between the code and the layout for the profile image
         this.imageViewAvatar = (CircleImageView) this.findViewById(R.id.profile_image);
     }
 
@@ -54,7 +57,9 @@ public class SettingsActivity extends AppCompatActivity {
     private void initToolbar() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        //This method is called in order for back button to appear in toolbar.
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        //installing listener for the 'back' button.
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -63,6 +68,9 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
+    /*
+    This method is for resetting settings back to default. Here we are erasing file with settings.
+     */
     private void settingsRefresh(String fileName){
         SharedPreferences preferences = getSharedPreferences(fileName, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
@@ -109,6 +117,10 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
+    /*
+    Current method erases preference file that have anything in common with account.
+    It deletes authorisation hash from preferences.
+     */
     private void buttonClickExit() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.content_settings_alert_dialog_title);
@@ -123,16 +135,25 @@ public class SettingsActivity extends AppCompatActivity {
                 editor.apply();
                 Intent intent = new Intent(SettingsActivity.this, CheckActivity.class);
                 startActivity(intent);
+                //This method closes all activities.
                 finishAffinity();
             }
         });
+        //Builder is responsible for structuring a pop up window with different options to choose.
         builder.setNegativeButton("No", null);
         builder.show();
     }
 
+    /*
+    Current method is invoked during resuming of this activity which was earlier paused.
+     */
     @Override
     protected void onResume() {
         super.onResume();
+        //While resuming this activity if a preference file stores account settings then we
+        //fill up login and password fields and install a profile picture is necessarily from the file.
+        //This code is written in this method in order for settings to automatically update after
+        //closing EditAccountSettingsActivity
         if(mSettings.contains(EditAccountSettingsActivity.ACCOUNT_PREFERENCES_USER_NAME)
                 && mSettings.contains(EditAccountSettingsActivity.ACCOUNT_PREFERENCES_USER_SEC_NAME)) {
             this.textViewUserName.setText(mSettings.getString(EditAccountSettingsActivity.ACCOUNT_PREFERENCES_USER_NAME, "Не выбрано"));
@@ -140,6 +161,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
         if(mSettings.contains(EditAccountSettingsActivity.ACCOUNT_PREFERENCES_USER_AVATAR)){
             try {
+                //We take a picture's root from preference file. We then take this picture and use it as a resource for image view.
                 this.imageViewAvatar.setImageBitmap(MediaStore.Images.Media.getBitmap(getContentResolver(),
                         Uri.parse(mSettings.getString(EditAccountSettingsActivity.ACCOUNT_PREFERENCES_USER_AVATAR, ""))));
             } catch (IOException e) {

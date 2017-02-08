@@ -25,6 +25,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+    /*
+    Bellow are the 3 identificators with the name of the settings, logins and hashes.
+    PREFERENCE_LOGIN is a login identificator in PREFERENCES_AUTHORISATION
+    PREFERENCE_HASH is a hash identificator in PREFERENCES_AUTHORISATION
+    PREFERENCES_AUTHORISATION is a variable with a name of file with settings
+     */
     public static final String PREFERENCES_AUTHORISATION = "authorisation";
     public static final String PREFERENCE_LOGIN = "login";
     public static final String PREFERENCE_HASH = "hash";
@@ -34,7 +40,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView textViewSignIn;
     private TextView textViewFail;
     private SharedPreferences preferences;
-
+    /*
+    Current object is used for in case of mistake (wrong login or password)
+    we could pop up the message about the mistake.
+    Current object is used for receiving messages from a multi-streaming code.
+    Because in multi-stream we cannot just use a 'if' with a toast.
+    We can only use them in the main stream.
+    Because of that we will be sending messages from the secondary stream into the main one.
+    While in the main stream using the identification of the sent message we will be showing
+    a mistake in case it's needed.
+     */
     private final Handler handler = new Handler() {
         public void handleMessage(Message msg) {
             if(msg.arg1 == 1)
@@ -44,14 +59,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //calling for the method onCreate from the parent class
+        //in the parent onCreate method developers produced standard mechanisms
         super.onCreate(savedInstanceState);
+        //setContentView joins file with layout with Java code
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        //found toolbar using its id. As a toolbar we installed the found one.
         setSupportActionBar(toolbar);
         this.initComponents();
     }
 
     private void initComponents() {
+        //connecting preferences from a file containing them
         this.preferences = getSharedPreferences(PREFERENCES_AUTHORISATION, Context.MODE_PRIVATE);
         this.initButtonEnter();
         this.initTextViews();
@@ -91,19 +111,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setNegativeButton("No", null);
         builder.show();
     }
-
+    //if a enter button is pressed the control is passed on into this code
     @Override
     public void onClick(View view) {
+        //creating a new secondary thread conecction with internet since it cannot be done in the main thread
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 String login = null;
                 HttpURLConnection conn = null;
                 try {
-                    Log.i("chat", "+ FoneService --------------- ОТКРОЕМ СОЕДИНЕНИЕ");
+                    Log.i("chat", "+ FoneService --------------- initialising connection");
 
+                    //receiving a login from the form
                     login  = textViewLogin.getText().toString();
+                    //receiving a password from a form
                     String password  = textViewPassword.getText().toString();
+                    //encrypting the password using MD5 algorithm
                     password = MD5Crypt.md5(password);
 
                     String server_name = "http://vhost8260.cpsite.ru";
@@ -118,46 +142,59 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     conn.connect();
 
                 } catch (Exception e) {
-                    Log.i("chat", "+ FoneService ошибка: " + e.getMessage());
+                    Log.i("chat", "+ FoneService error: " + e.getMessage());
                 }
 
-                // получаем ответ ---------------------------------->
+                // receiving answer ---------------------------------->
                 try {
                     InputStream is = conn.getInputStream();
                     BufferedReader br = new BufferedReader(
                             new InputStreamReader(is, "UTF-8"));
 
+                    //receiving server answer about the correction of login and password
                     String ans = br.readLine();
+                    //receiving authorisation hash
                     String anHash = br.readLine();
 
-                    Log.i("chat", "+ FoneService - полный ответ сервера:\n"
+                    Log.i("chat", "+ FoneService - full server's reply:\n"
                             + ans + anHash);
                     SharedPreferences.Editor editor = preferences.edit();
+                    /*
+                    If server's respond is not 'null' and contains 'true'
+                    then we will proceed with the following statements.
+                     */
                     if(ans != null && ans.contains("true")) {
                         Intent intent = new Intent(MainActivity.this, StartActivity.class);
                         startActivity(intent);
+                        //into the preference file login and authorisation hash is written down
                         editor.putString(PREFERENCE_LOGIN, login);
+                        //'split' divides login and authorisation hash from each other as they have a + in between
                         editor.putString(PREFERENCE_HASH, ans.split("\\+")[1]);
                         editor.apply();
                         finish();
                     }
                     else{
+                        /*
+                        if the server's respond is negative, we send a message to the main stream
+                        with an identificator = 1
+                         */
                         Message msg = handler.obtainMessage();
                         msg.arg1 = 1;
                         handler.sendMessage(msg);
                     }
 
-                    is.close(); // закроем поток
-                    br.close(); // закроем буфер
+                    is.close(); // close stream
+                    br.close(); // close buffer
 
                 } catch (Exception e) {
-                    Log.i("chat", "+ FoneService ошибка: " + e.getMessage());
+                    Log.i("chat", "+ FoneService error: " + e.getMessage());
                 } finally {
                     conn.disconnect();
-                    Log.i("chat", "+ FoneService --------------- ЗАКРОЕМ СОЕДИНЕНИЕ");
+                    Log.i("chat", "+ FoneService --------------- close connection");
                 }
             }
         });
+        //start the thread we created
         thread.start();
     }
 }
